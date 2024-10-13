@@ -16,6 +16,20 @@ import (
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/hashicorp/go-getter"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+
+	_ "google.golang.org/protobuf/types/gofeaturespb" // link in packages that include the standard protos included with protoc.
+	_ "google.golang.org/protobuf/types/known/anypb"
+	_ "google.golang.org/protobuf/types/known/apipb"
+	_ "google.golang.org/protobuf/types/known/durationpb"
+	_ "google.golang.org/protobuf/types/known/emptypb"
+	_ "google.golang.org/protobuf/types/known/fieldmaskpb"
+	_ "google.golang.org/protobuf/types/known/sourcecontextpb"
+	_ "google.golang.org/protobuf/types/known/structpb"
+	_ "google.golang.org/protobuf/types/known/timestamppb"
+	_ "google.golang.org/protobuf/types/known/typepb"
+	_ "google.golang.org/protobuf/types/known/wrapperspb"
+	_ "google.golang.org/protobuf/types/pluginpb"
 )
 
 var (
@@ -58,7 +72,14 @@ func (reg *Registry) FileContainingSymbol(name protoreflect.FullName) (protorefl
 
 func (reg *Registry) FileByFilename(name string) (protoreflect.FileDescriptor, error) {
 	resolver := reg.getResolver()
-	return resolver.FindFileByPath(name)
+
+	res, err := resolver.FindFileByPath(name)
+	if err != nil && errors.Is(err, protoregistry.NotFound) {
+		// fallback to the global files registry
+		res, err = protoregistry.GlobalFiles.FindFileByPath(name)
+	}
+
+	return res, err
 }
 
 func (reg *Registry) FileContaingURL(url string) (protoreflect.FileDescriptor, error) {
