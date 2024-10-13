@@ -11,7 +11,7 @@ import (
 	_ "github.com/bufbuild/protocompile"
 	"github.com/maxott/go-repl"
 	"github.com/spf13/cobra"
-	"github.com/tierklinik-dobersberg/pbtype-server/resolver"
+	"github.com/tierklinik-dobersberg/pbtype-server/pkg/resolver"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"

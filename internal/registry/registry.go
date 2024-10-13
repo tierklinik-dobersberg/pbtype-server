@@ -15,6 +15,7 @@ import (
 	"github.com/bufbuild/protocompile"
 	"github.com/bufbuild/protocompile/linker"
 	"github.com/hashicorp/go-getter"
+	"github.com/tierklinik-dobersberg/pbtype-server/pkg/protoresolve"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 
@@ -97,7 +98,10 @@ func (reg *Registry) getResolver() linker.Resolver {
 	reg.l.RLock()
 	defer reg.l.RUnlock()
 
-	return reg.resolver
+	return protoresolve.NewCombinedResolver(
+		reg.resolver,
+		protoresolve.NewGlobalResolver(),
+	)
 }
 
 func (reg *Registry) StartPolling(ctx context.Context) error {
