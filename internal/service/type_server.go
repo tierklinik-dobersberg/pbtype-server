@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 
 	"github.com/bufbuild/connect-go"
@@ -45,6 +46,9 @@ func (srv *TypeServer) ResolveType(ctx context.Context, req *connect.Request[typ
 	case *typeserverv1.ResolveRequest_FileContainingUrl:
 		slog.Info("resolving proto type", "url", v.FileContainingUrl)
 		desc, err = srv.registry.FileContaingURL(v.FileContainingUrl)
+
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("no message kind specified"))
 	}
 
 	if err != nil {
