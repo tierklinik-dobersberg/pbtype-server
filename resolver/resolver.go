@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 
 	"github.com/bufbuild/connect-go"
@@ -31,8 +32,9 @@ import (
 )
 
 type Resolver struct {
-	cli typeserverv1connect.TypeResolverServiceClient
-	reg *protoregistry.Files
+	cli   typeserverv1connect.TypeResolverServiceClient
+	reg   *protoregistry.Files
+	types *protoregistry.Types
 }
 
 func New(url string) *Resolver {
@@ -41,7 +43,8 @@ func New(url string) *Resolver {
 			cli.NewInsecureHttp2Client(),
 			url,
 		),
-		reg: &protoregistry.Files{},
+		reg:   &protoregistry.Files{},
+		types: &protoregistry.Types{},
 	}
 }
 
@@ -105,12 +108,18 @@ func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, err
 
 func (h *Resolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
 	if res, err := protoregistry.GlobalFiles.FindDescriptorByName(name); err == nil {
+		slog.Info("found type in GlobalFiles registry", "name", name)
+
 		return res, nil
 	}
 
 	if res, err := h.reg.FindDescriptorByName(name); err == nil {
+		slog.Info("found type in local registry", "name", name)
+
 		return res, nil
 	}
+
+	slog.Info("trying to resolve type", "name", name)
 
 	res, err := h.cli.ResolveType(context.Background(), connect.NewRequest(&typeserverv1.ResolveRequest{
 		Kind: &typeserverv1.ResolveRequest_FileContainingSymbol{
@@ -140,69 +149,75 @@ func (h *Resolver) parseFileDescriptorProto(blob []byte) (protoreflect.FileDescr
 		return nil, fmt.Errorf("failed to create file descriptor: %w", err)
 	}
 
+	// register the file at the registry
 	h.reg.RegisterFile(desc)
+
+	// also, register all message, enum and extension types
+	for idx := 0; idx < desc.Extensions().Len(); idx++ {
+		h.types.RegisterExtension(
+			dynamicpb.NewExtensionType(desc.Extensions().Get(idx)),
+		)
+	}
+	for idx := 0; idx < desc.Messages().Len(); idx++ {
+		h.types.RegisterMessage(
+			dynamicpb.NewMessageType(desc.Messages().Get(idx)),
+		)
+	}
+	for idx := 0; idx < desc.Enums().Len(); idx++ {
+		h.types.RegisterEnum(
+			dynamicpb.NewEnumType(desc.Enums().Get(idx)),
+		)
+	}
 
 	return desc, nil
 }
 
 func (h *Resolver) FindExtensionByName(name protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	desc, err := h.FindDescriptorByName(name)
+	res, err := h.types.FindExtensionByName(name)
 	if err != nil {
-		return nil, err
+		res, err = protoregistry.GlobalTypes.FindExtensionByName(name)
 	}
 
-	mDesc, ok := desc.(protoreflect.ExtensionDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("expected protoreflect.ExtensionDescriptor but got %T", desc)
-	}
-
-	return dynamicpb.NewExtensionType(mDesc), nil
+	return res, err
 }
 
 func (h *Resolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	desc, err := h.FindDescriptorByName(message)
+	res, err := h.types.FindExtensionByNumber(message, field)
 	if err != nil {
-		return nil, err
+		res, err = protoregistry.GlobalTypes.FindExtensionByNumber(message, field)
 	}
 
-	mDesc, ok := desc.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
-	}
-
-	fieldDesc := mDesc.Fields().Get(int(field))
-
-	return dynamicpb.NewExtensionType(fieldDesc), nil
+	return res, nil
 }
 
 func (h *Resolver) FindMessageByName(name protoreflect.FullName) (protoreflect.MessageType, error) {
-	desc, err := h.FindDescriptorByName(name)
+	_, err := h.FindDescriptorByName(name)
 	if err != nil {
 		return nil, err
 	}
 
-	mDesc, ok := desc.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
+	res, err := h.types.FindMessageByName(name)
+	if err != nil {
+		res, err = protoregistry.GlobalTypes.FindMessageByName(name)
 	}
 
-	return dynamicpb.NewMessageType(mDesc), nil
+	return res, err
 }
 
 func (h *Resolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
 	_, name, _ := strings.Cut(url, "/")
 
-	desc, err := h.FindDescriptorByName(protoreflect.FullName(name))
+	_, err := h.FindDescriptorByName(protoreflect.FullName(name))
 	if err != nil {
 		return nil, err
 	}
 
-	mDesc, ok := desc.(protoreflect.MessageDescriptor)
-	if !ok {
-		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
+	res, err := h.types.FindMessageByURL(url)
+	if err != nil {
+		res, err = protoregistry.GlobalTypes.FindMessageByURL(url)
 	}
 
-	return dynamicpb.NewMessageType(mDesc), nil
+	return res, err
 }
 
 var _ interface {

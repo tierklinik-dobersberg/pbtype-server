@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"log/slog"
@@ -13,6 +14,7 @@ import (
 	"github.com/tierklinik-dobersberg/pbtype-server/resolver"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/dynamicpb"
 )
 
@@ -36,11 +38,26 @@ func (h *handler) Eval(line string) string {
 	)
 
 	switch {
+	case strings.Contains(line, "googleapis.com"):
+		var mtype protoreflect.MessageType
+		mtype, err = h.Resolver.FindMessageByURL(line)
+
+		if err == nil {
+			desc = mtype.Descriptor()
+		}
+
 	case strings.Contains(line, "/"):
 		desc, err = h.Resolver.FindFileByPath(line)
 
 	default:
-		desc, err = h.Resolver.FindDescriptorByName(protoreflect.FullName(line))
+		var mtype protoreflect.MessageType
+		mtype, err = h.Resolver.FindMessageByName(protoreflect.FullName(line))
+
+		if err == nil {
+			desc = mtype.Descriptor()
+		} else if errors.Is(err, protoregistry.NotFound) {
+			desc, err = h.Resolver.FindDescriptorByName(protoreflect.FullName(line))
+		}
 	}
 
 	if err != nil {
