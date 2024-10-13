@@ -38,13 +38,21 @@ type Resolver struct {
 }
 
 func New(url string) *Resolver {
+	return Wrap(
+		url,
+		&protoregistry.Files{},
+		&protoregistry.Types{},
+	)
+}
+
+func Wrap(url string, files *protoregistry.Files, types *protoregistry.Types) *Resolver {
 	return &Resolver{
 		cli: typeserverv1connect.NewTypeResolverServiceClient(
 			cli.NewInsecureHttp2Client(),
 			url,
 		),
-		reg:   &protoregistry.Files{},
-		types: &protoregistry.Types{},
+		reg:   files,
+		types: types,
 	}
 }
 
