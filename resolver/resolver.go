@@ -3,6 +3,7 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/bufbuild/connect-go"
 	typeserverv1 "github.com/tierklinik-dobersberg/apis/gen/go/tkd/typeserver/v1"
@@ -14,6 +15,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
 	"google.golang.org/protobuf/types/dynamicpb"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 type Resolver struct {
@@ -56,6 +58,16 @@ func (h *Resolver) NewMessageFromBytes(fullName protoreflect.FullName, blob []by
 	}
 
 	return msg, nil
+}
+
+func (h *Resolver) UnpackAny(m *anypb.Any) (proto.Message, error) {
+	name := m.TypeUrl
+
+	if strings.Contains(name, "googleapis") {
+		_, name, _ = strings.Cut(name, "/")
+	}
+
+	return h.NewMessageFromBytes(protoreflect.FullName(name), m.Value)
 }
 
 func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
