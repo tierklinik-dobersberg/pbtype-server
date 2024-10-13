@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/reflect/protoregistry"
 	"google.golang.org/protobuf/types/descriptorpb"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type Resolver struct {
@@ -28,6 +29,33 @@ func New(url string) *Resolver {
 		),
 		reg: &protoregistry.Files{},
 	}
+}
+
+func (h *Resolver) NewMessage(fullName protoreflect.FullName) (proto.Message, error) {
+	desc, err := h.FindDescriptorByName(fullName)
+	if err != nil {
+		return nil, err
+	}
+
+	mDesc, ok := desc.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("%s is not a message name, got %T", fullName, desc)
+	}
+
+	return dynamicpb.NewMessage(mDesc), nil
+}
+
+func (h *Resolver) NewMessageFromBytes(fullName protoreflect.FullName, blob []byte) (proto.Message, error) {
+	msg, err := h.NewMessage(fullName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := proto.Unmarshal(blob, msg); err != nil {
+		return nil, err
+	}
+
+	return msg, nil
 }
 
 func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
