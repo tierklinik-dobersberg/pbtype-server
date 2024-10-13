@@ -16,7 +16,9 @@ COPY ./ ./
 
 RUN CGO_ENABLED=0 go build -o /go/bin/pbtype-server ./cmds/pbtype-server
 
-FROM gcr.io/distroless/base-debian12
+FROM alpine:latest
+
+RUN apk update && apk add git
 
 COPY --from=gobuild /go/bin/pbtype-server /go/bin/pbtype-server
 EXPOSE 8081
