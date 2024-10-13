@@ -144,3 +144,68 @@ func (h *Resolver) parseFileDescriptorProto(blob []byte) (protoreflect.FileDescr
 
 	return desc, nil
 }
+
+func (h *Resolver) FindExtensionByName(name protoreflect.FullName) (protoreflect.ExtensionType, error) {
+	desc, err := h.FindDescriptorByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	mDesc, ok := desc.(protoreflect.ExtensionDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("expected protoreflect.ExtensionDescriptor but got %T", desc)
+	}
+
+	return dynamicpb.NewExtensionType(mDesc), nil
+}
+
+func (h *Resolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
+	desc, err := h.FindDescriptorByName(message)
+	if err != nil {
+		return nil, err
+	}
+
+	mDesc, ok := desc.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
+	}
+
+	fieldDesc := mDesc.Fields().Get(int(field))
+
+	return dynamicpb.NewExtensionType(fieldDesc), nil
+}
+
+func (h *Resolver) FindMessageByName(name protoreflect.FullName) (protoreflect.MessageType, error) {
+	desc, err := h.FindDescriptorByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	mDesc, ok := desc.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
+	}
+
+	return dynamicpb.NewMessageType(mDesc), nil
+}
+
+func (h *Resolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
+	_, name, _ := strings.Cut(url, "/")
+
+	desc, err := h.FindDescriptorByName(protoreflect.FullName(name))
+	if err != nil {
+		return nil, err
+	}
+
+	mDesc, ok := desc.(protoreflect.MessageDescriptor)
+	if !ok {
+		return nil, fmt.Errorf("expected protoreflect.MessageDescriptor but got %T", desc)
+	}
+
+	return dynamicpb.NewMessageType(mDesc), nil
+}
+
+var _ interface {
+	protoregistry.MessageTypeResolver
+	protoregistry.ExtensionTypeResolver
+} = (*Resolver)(nil)

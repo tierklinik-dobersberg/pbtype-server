@@ -11,7 +11,9 @@ import (
 	"github.com/maxott/go-repl"
 	"github.com/spf13/cobra"
 	"github.com/tierklinik-dobersberg/pbtype-server/resolver"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/dynamicpb"
 )
 
 type handler struct {
@@ -43,6 +45,22 @@ func (h *handler) Eval(line string) string {
 
 	if err != nil {
 		return err.Error()
+	}
+
+	if mdesc, ok := desc.(protoreflect.MessageDescriptor); ok {
+		msg := dynamicpb.NewMessage(mdesc)
+
+		blob, err := (&protojson.MarshalOptions{
+			EmitUnpopulated:   true,
+			EmitDefaultValues: true,
+			Indent:            "  ",
+			Multiline:         true,
+		}).Marshal(msg)
+		if err != nil {
+			return err.Error()
+		}
+
+		return string(blob)
 	}
 
 	return fmt.Sprintf("%s (%T)", desc.FullName(), desc)
