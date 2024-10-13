@@ -12,19 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tierklinik-dobersberg/pbtype-server/resolver"
 	"google.golang.org/protobuf/reflect/protoreflect"
-
-	_ "google.golang.org/protobuf/types/gofeaturespb" // link in packages that include the standard protos included with protoc.
-	_ "google.golang.org/protobuf/types/known/anypb"
-	_ "google.golang.org/protobuf/types/known/apipb"
-	_ "google.golang.org/protobuf/types/known/durationpb"
-	_ "google.golang.org/protobuf/types/known/emptypb"
-	_ "google.golang.org/protobuf/types/known/fieldmaskpb"
-	_ "google.golang.org/protobuf/types/known/sourcecontextpb"
-	_ "google.golang.org/protobuf/types/known/structpb"
-	_ "google.golang.org/protobuf/types/known/timestamppb"
-	_ "google.golang.org/protobuf/types/known/typepb"
-	_ "google.golang.org/protobuf/types/known/wrapperspb"
-	_ "google.golang.org/protobuf/types/pluginpb"
 )
 
 type handler struct {
