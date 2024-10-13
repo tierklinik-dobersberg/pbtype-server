@@ -38,4 +38,4 @@ jobs:
           secrets: |
             "github_token=${{ secrets.GITHUB_TOKEN }}"
           tags: |
-            ghcr.io/tierklinik-dobersberg/type-server:latest
+            ghcr.io/tierklinik-dobersberg/pbtype-server:latest
