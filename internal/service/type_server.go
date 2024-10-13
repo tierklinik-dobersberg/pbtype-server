@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/bufbuild/connect-go"
 	typeserverv1 "github.com/tierklinik-dobersberg/apis/gen/go/tkd/typeserver/v1"
@@ -26,7 +27,7 @@ func New(registry *registry.Registry) *TypeServer {
 	}
 }
 
-func (srv *TypeServer) Resolve(ctx context.Context, req *connect.Request[typeserverv1.ResolveRequest]) (*connect.Response[typeserverv1.ResolveResponse], error) {
+func (srv *TypeServer) ResolveType(ctx context.Context, req *connect.Request[typeserverv1.ResolveRequest]) (*connect.Response[typeserverv1.ResolveResponse], error) {
 	var (
 		desc protoreflect.FileDescriptor
 		err  error
@@ -34,12 +35,15 @@ func (srv *TypeServer) Resolve(ctx context.Context, req *connect.Request[typeser
 
 	switch v := req.Msg.Kind.(type) {
 	case *typeserverv1.ResolveRequest_FileByFilename:
+		slog.Info("resolving proto type", "filename", v.FileByFilename)
 		desc, err = srv.registry.FileByFilename(v.FileByFilename)
 
 	case *typeserverv1.ResolveRequest_FileContainingSymbol:
+		slog.Info("resolving proto type", "symbol", v.FileContainingSymbol)
 		desc, err = srv.registry.FileContainingSymbol(protoreflect.FullName(v.FileContainingSymbol))
 
 	case *typeserverv1.ResolveRequest_FileContainingUrl:
+		slog.Info("resolving proto type", "url", v.FileContainingUrl)
 		desc, err = srv.registry.FileContaingURL(v.FileContainingUrl)
 	}
 

@@ -53,7 +53,7 @@ func (reg *Registry) FileContainingSymbol(name protoreflect.FullName) (protorefl
 		return fd, nil
 	}
 
-	return fd.ParentFile(), nil
+	return response.ParentFile(), nil
 }
 
 func (reg *Registry) FileByFilename(name string) (protoreflect.FileDescriptor, error) {
@@ -85,6 +85,7 @@ func (reg *Registry) StartPolling(ctx context.Context) error {
 		return ErrPollingStarted
 
 	default:
+		close(reg.started)
 	}
 
 	go func() {
@@ -92,6 +93,7 @@ func (reg *Registry) StartPolling(ctx context.Context) error {
 		defer ticker.Stop()
 
 		for {
+			slog.Info(("updating protobuf sources"))
 			reg.updateSources(ctx)
 
 			select {
@@ -141,6 +143,8 @@ func (reg *Registry) updateSources(_ context.Context) {
 			return nil
 		})
 	}
+
+	slog.Info("compiling protobuf sources", "paths", importPaths)
 
 	compiler := protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
