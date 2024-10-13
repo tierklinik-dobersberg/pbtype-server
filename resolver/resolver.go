@@ -94,10 +94,6 @@ func (h *Resolver) UnpackAny(m *anypb.Any) (proto.Message, error) {
 }
 
 func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, error) {
-	if res, err := protoregistry.GlobalFiles.FindFileByPath(path); err == nil {
-		return res, err
-	}
-
 	if res, err := h.reg.FindFileByPath(path); err == nil {
 		return res, nil
 	}
@@ -115,12 +111,6 @@ func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, err
 }
 
 func (h *Resolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
-	if res, err := protoregistry.GlobalFiles.FindDescriptorByName(name); err == nil {
-		slog.Debug("found type in GlobalFiles registry", "name", name)
-
-		return res, nil
-	}
-
 	if res, err := h.reg.FindDescriptorByName(name); err == nil {
 		slog.Debug("found type in local registry", "name", name)
 
@@ -181,21 +171,11 @@ func (h *Resolver) parseFileDescriptorProto(blob []byte) (protoreflect.FileDescr
 }
 
 func (h *Resolver) FindExtensionByName(name protoreflect.FullName) (protoreflect.ExtensionType, error) {
-	res, err := h.types.FindExtensionByName(name)
-	if err != nil {
-		res, err = protoregistry.GlobalTypes.FindExtensionByName(name)
-	}
-
-	return res, err
+	return h.types.FindExtensionByName(name)
 }
 
 func (h *Resolver) FindExtensionByNumber(message protoreflect.FullName, field protoreflect.FieldNumber) (protoreflect.ExtensionType, error) {
-	res, err := h.types.FindExtensionByNumber(message, field)
-	if err != nil {
-		res, err = protoregistry.GlobalTypes.FindExtensionByNumber(message, field)
-	}
-
-	return res, nil
+	return h.types.FindExtensionByNumber(message, field)
 }
 
 func (h *Resolver) FindMessageByName(name protoreflect.FullName) (protoreflect.MessageType, error) {
@@ -204,12 +184,7 @@ func (h *Resolver) FindMessageByName(name protoreflect.FullName) (protoreflect.M
 		return nil, err
 	}
 
-	res, err := h.types.FindMessageByName(name)
-	if err != nil {
-		res, err = protoregistry.GlobalTypes.FindMessageByName(name)
-	}
-
-	return res, err
+	return h.types.FindMessageByName(name)
 }
 
 func (h *Resolver) FindMessageByURL(url string) (protoreflect.MessageType, error) {
@@ -220,12 +195,7 @@ func (h *Resolver) FindMessageByURL(url string) (protoreflect.MessageType, error
 		return nil, err
 	}
 
-	res, err := h.types.FindMessageByURL(url)
-	if err != nil {
-		res, err = protoregistry.GlobalTypes.FindMessageByURL(url)
-	}
-
-	return res, err
+	return h.types.FindMessageByURL(url)
 }
 
 var _ interface {
