@@ -165,7 +165,7 @@ func (reg *Registry) updateSources(_ context.Context) {
 		})
 	}
 
-	slog.Info("compiling protobuf sources", "paths", importPaths)
+	slog.Info("compiling protobuf sources", "paths", importPaths, "files", len(files))
 
 	compiler := protocompile.Compiler{
 		Resolver: protocompile.WithStandardImports(&protocompile.SourceResolver{
