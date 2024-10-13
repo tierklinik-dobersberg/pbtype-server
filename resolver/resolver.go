@@ -116,13 +116,13 @@ func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, err
 
 func (h *Resolver) FindDescriptorByName(name protoreflect.FullName) (protoreflect.Descriptor, error) {
 	if res, err := protoregistry.GlobalFiles.FindDescriptorByName(name); err == nil {
-		slog.Info("found type in GlobalFiles registry", "name", name)
+		slog.Debug("found type in GlobalFiles registry", "name", name)
 
 		return res, nil
 	}
 
 	if res, err := h.reg.FindDescriptorByName(name); err == nil {
-		slog.Info("found type in local registry", "name", name)
+		slog.Debug("found type in local registry", "name", name)
 
 		return res, nil
 	}
