@@ -127,7 +127,7 @@ func (reg *Registry) updateSources(_ context.Context) {
 
 		entry.Info("downloading proto file")
 		if err := getter.Get(tmpdir, arg); err != nil {
-			entry.Error("failed to download proto files")
+			entry.Error("failed to download proto files", "error", err)
 
 			return
 		}
