@@ -10,6 +10,7 @@ import (
 	typeserverv1 "github.com/tierklinik-dobersberg/apis/gen/go/tkd/typeserver/v1"
 	"github.com/tierklinik-dobersberg/apis/gen/go/tkd/typeserver/v1/typeserverv1connect"
 	"github.com/tierklinik-dobersberg/apis/pkg/cli"
+	"github.com/tierklinik-dobersberg/pbtype-server/pkg/protoresolve"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protodesc"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -198,7 +199,4 @@ func (h *Resolver) FindMessageByURL(url string) (protoreflect.MessageType, error
 	return h.types.FindMessageByURL(url)
 }
 
-var _ interface {
-	protoregistry.MessageTypeResolver
-	protoregistry.ExtensionTypeResolver
-} = (*Resolver)(nil)
+var _ protoresolve.Resolver = (*Resolver)(nil)
