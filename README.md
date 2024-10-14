@@ -18,6 +18,8 @@ go build ./cmds/pbtype-server
     --source github.com/bufbuild/protovalidate.git//proto/protovalidate
 ```
 
+Sources are downloaded using the awesome [hashicorp/go-getter](https://github.com/hashicorp/go-getter) library which supports downloading from various sources and supports automatic unpacking of archives. Refer to it's documentation on how to specify URLs. 
+
 ## Client Library
 
 This package also provides a simple Go client library for fetching protobuf type definitions:
@@ -31,10 +33,10 @@ import (
     "github.com/tierklinik-dobersberg/pbtype-server/pkg/resolver"
     "github.com/tierklinik-dobersberg/pbtype-server/pkg/protoresolve"
 
-	"google.golang.org/protobuf/reflect/protoreflect"
-	"google.golang.org/protobuf/types/dynamicpb"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoregistry"
+    "google.golang.org/protobuf/reflect/protoreflect"
+    "google.golang.org/protobuf/types/dynamicpb"
+    "google.golang.org/protobuf/encoding/protojson"
+    "google.golang.org/protobuf/reflect/protoregistry"
 )
 
 // The address of your type-server
