@@ -1,5 +1,10 @@
 # A Protobuf Type Server
 
+[![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)][godocs]
+![GitHub Tag](https://img.shields.io/github/v/tag/tierklinik-dobersberg/pbtype-server)
+
+[godocs]: http://godoc.org/github.com/tierklinik-dobersberg/pbtype-server
+
 A type server for protobuf file descriptors mainly used to work with `google.protobuf.Any` when pre-compiling the the proto files into the final binary is not acceptable or impossible.
 
 The type-server implements a Connect-RPC/gRPC interface similar to the gRPC Server-Reflection and is defined in [tierklinik-dobersberg/apis](https://github.com/tierklinik-dobersberg/apis/blob/main/proto/tkd/typeserver/v1/typeserver.proto).
