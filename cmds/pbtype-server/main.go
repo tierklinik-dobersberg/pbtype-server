@@ -9,6 +9,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/tierklinik-dobersberg/apis/gen/go/tkd/typeserver/v1/typeserverv1connect"
+	"github.com/tierklinik-dobersberg/apis/pkg/discovery"
+	"github.com/tierklinik-dobersberg/apis/pkg/discovery/consuldiscover"
+	"github.com/tierklinik-dobersberg/apis/pkg/discovery/wellknown"
 	"github.com/tierklinik-dobersberg/apis/pkg/server"
 	"github.com/tierklinik-dobersberg/pbtype-server/internal/registry"
 	"github.com/tierklinik-dobersberg/pbtype-server/internal/service"
@@ -41,6 +44,20 @@ func main() {
 
 			path, handler := typeserverv1connect.NewTypeResolverServiceHandler(srv)
 			serveMux.Handle(path, handler)
+
+			// Register at service catalog
+			catalog, err := consuldiscover.NewFromEnv()
+			if err != nil {
+				slog.Error("failed to create service catalog client", "error", err)
+				os.Exit(-1)
+			}
+
+			if err := discovery.Register(ctx, catalog, &discovery.ServiceInstance{
+				Name:    wellknown.TypeV1ServiceScope,
+				Address: listenAddress,
+			}); err != nil {
+				slog.Error("failed to register at service catalog", "error", err)
+			}
 
 			h2srv, err := server.CreateWithOptions(listenAddress, serveMux)
 			if err != nil {
