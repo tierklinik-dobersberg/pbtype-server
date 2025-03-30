@@ -32,10 +32,22 @@ import (
 	_ "google.golang.org/protobuf/types/pluginpb"
 )
 
+type ClientFactory interface {
+	Create() (typeserverv1connect.TypeResolverServiceClient, error)
+}
+
+type staticClientFactory struct {
+	cli typeserverv1connect.TypeResolverServiceClient
+}
+
+func (s staticClientFactory) Create() (typeserverv1connect.TypeResolverServiceClient, error) {
+	return s.cli, nil
+}
+
 type Resolver struct {
-	cli   typeserverv1connect.TypeResolverServiceClient
-	reg   *protoregistry.Files
-	types *protoregistry.Types
+	factory ClientFactory
+	reg     *protoregistry.Files
+	types   *protoregistry.Types
 }
 
 func New(url string) *Resolver {
@@ -46,12 +58,22 @@ func New(url string) *Resolver {
 	)
 }
 
+func WrapFactory(factory ClientFactory, files *protoregistry.Files, types *protoregistry.Types) *Resolver {
+	return &Resolver{
+		factory: factory,
+		reg:     files,
+		types:   types,
+	}
+}
+
 func Wrap(url string, files *protoregistry.Files, types *protoregistry.Types) *Resolver {
 	return &Resolver{
-		cli: typeserverv1connect.NewTypeResolverServiceClient(
-			cli.NewInsecureHttp2Client(),
-			url,
-		),
+		factory: staticClientFactory{
+			cli: typeserverv1connect.NewTypeResolverServiceClient(
+				cli.NewInsecureHttp2Client(),
+				url,
+			),
+		},
 		reg:   files,
 		types: types,
 	}
@@ -99,7 +121,11 @@ func (h *Resolver) FindFileByPath(path string) (protoreflect.FileDescriptor, err
 		return res, nil
 	}
 
-	res, err := h.cli.ResolveType(context.Background(), connect.NewRequest(&typeserverv1.ResolveRequest{
+	cli, err := h.factory.Create()
+	if err != nil {
+		return nil, err
+	}
+	res, err := cli.ResolveType(context.Background(), connect.NewRequest(&typeserverv1.ResolveRequest{
 		Kind: &typeserverv1.ResolveRequest_FileByFilename{
 			FileByFilename: path,
 		},
@@ -120,7 +146,11 @@ func (h *Resolver) FindDescriptorByName(name protoreflect.FullName) (protoreflec
 
 	slog.Info("trying to resolve type", "name", name)
 
-	res, err := h.cli.ResolveType(context.Background(), connect.NewRequest(&typeserverv1.ResolveRequest{
+	cli, err := h.factory.Create()
+	if err != nil {
+		return nil, err
+	}
+	res, err := cli.ResolveType(context.Background(), connect.NewRequest(&typeserverv1.ResolveRequest{
 		Kind: &typeserverv1.ResolveRequest_FileContainingSymbol{
 			FileContainingSymbol: string(name),
 		},
